@@ -28,4 +28,26 @@ export class BucketsService {
 
     return bucket;
   }
+
+  async delete(name: string) {
+    const bucketFound = await this.bucketRepository.findOne({
+      where: { name: ILike(name) },
+    });
+
+    if (!bucketFound) {
+      throw new CustomException(
+        'Bucket with this name not exists',
+        'name',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    this.bucketRepository.softRemove(bucketFound);
+  }
+
+  async findAll(): Promise<Bucket[]> {
+    const buckets = await this.bucketRepository.find();
+
+    return buckets;
+  }
 }

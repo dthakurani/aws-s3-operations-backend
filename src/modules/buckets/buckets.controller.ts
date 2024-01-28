@@ -1,4 +1,12 @@
-import { Body, Controller, HttpCode, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  Post,
+} from '@nestjs/common';
 import { BucketsService } from './buckets.service';
 import { CreateBucketDto } from './buckets.dto';
 import { Bucket } from '../../entities/bucket.entity';
@@ -11,5 +19,16 @@ export class BucketsController {
   @HttpCode(201)
   create(@Body() body: CreateBucketDto): Promise<Bucket> {
     return this.bucketsService.create(body);
+  }
+
+  @Delete(':name')
+  @HttpCode(204)
+  delete(@Param('name') bucketName: string) {
+    return this.bucketsService.delete(bucketName);
+  }
+
+  @Get()
+  findAll(): Promise<Bucket[]> {
+    return this.bucketsService.findAll();
   }
 }
