@@ -6,6 +6,7 @@ import * as morgan from 'morgan';
 import { AppService } from './app.service';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core/constants';
 import { ErrorMessageSerializerFilter } from './filters/generic-error-handler.filter';
+import { BucketsModule } from './modules/buckets/buckets.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { ErrorMessageSerializerFilter } from './filters/generic-error-handler.fi
         autoLoadEntities: true,
       }),
     }),
+    BucketsModule,
   ],
   controllers: [AppController],
   providers: [
