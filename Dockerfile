@@ -8,4 +8,6 @@ RUN npm install
 
 COPY ./ /code/
 EXPOSE 9000
-CMD ["npm", "run", "start:prod"]
+RUN npm run build
+ENTRYPOINT [ "/bin/bash", "/code/entrypoint.sh" ]
+CMD ["npm", "run" , "start:prod"]
