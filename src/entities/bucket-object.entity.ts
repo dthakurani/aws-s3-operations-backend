@@ -6,7 +6,10 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
+import { Bucket } from './bucket.entity';
 
 @Entity('bucket_object')
 export class BucketObject extends BaseEntity {
@@ -42,4 +45,8 @@ export class BucketObject extends BaseEntity {
 
   @DeleteDateColumn({ name: 'deleted_at' })
   deleted_at: Date;
+
+  @ManyToOne(() => Bucket, (bucket) => bucket.id)
+  @JoinColumn({ name: 'bucket_id' })
+  bucket: Bucket;
 }
