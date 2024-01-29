@@ -14,16 +14,22 @@ import { BucketObjectsService } from './bucket-objects.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   CreateBucketObjectDto,
+  FindAllBucketObjectVersionsDto,
+  FindAllBucketObjectsDto,
   FindOneBucketObjectDto,
 } from './bucket-objects.dto';
+import { ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 @Controller('s3/buckets/:bucketName/objects')
+@ApiTags('Bucket Objects')
 export class BucketObjectsController {
   constructor(private bucketObjectsService: BucketObjectsService) {}
 
   @Put()
   @HttpCode(204)
+  @ApiOperation({ summary: 'Create a new bucket object' })
   @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
   put(
     @Param('bucketName') bucketName: string,
     @UploadedFile() file: Express.Multer.File,
@@ -33,6 +39,7 @@ export class BucketObjectsController {
   }
 
   @Get(':name')
+  @ApiOperation({ summary: 'Find a bucket object' })
   findOne(
     @Param('bucketName') bucketName: string,
     @Param('name') objectName: string,
@@ -42,6 +49,8 @@ export class BucketObjectsController {
   }
 
   @Delete(':name')
+  @HttpCode(204)
+  @ApiOperation({ summary: 'Delete a bucket object' })
   delete(
     @Param('bucketName') bucketName: string,
     @Param('name') objectName: string,
@@ -50,7 +59,25 @@ export class BucketObjectsController {
   }
 
   @Get()
-  findAll(@Param('bucketName') bucketName: string) {
-    return this.bucketObjectsService.findAll(bucketName);
+  @ApiOperation({ summary: 'List all bucket objects' })
+  findAll(
+    @Param('bucketName') bucketName: string,
+    @Query() query: FindAllBucketObjectsDto,
+  ) {
+    return this.bucketObjectsService.findAll(bucketName, query);
+  }
+
+  @Get(':name/versions')
+  @ApiOperation({ summary: 'List bucket object all versions' })
+  findAllVersions(
+    @Param('bucketName') bucketName: string,
+    @Param('name') objectName: string,
+    @Query() query: FindAllBucketObjectVersionsDto,
+  ) {
+    return this.bucketObjectsService.findAllVersions(
+      bucketName,
+      objectName,
+      query,
+    );
   }
 }

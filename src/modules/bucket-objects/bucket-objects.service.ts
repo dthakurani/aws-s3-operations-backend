@@ -5,6 +5,8 @@ import { BucketObject } from '../../entities/bucket-object.entity';
 import { ILike, IsNull, Repository } from 'typeorm';
 import {
   CreateBucketObjectDto,
+  FindAllBucketObjectVersionsDto,
+  FindAllBucketObjectsDto,
   FindOneBucketObjectDto,
 } from './bucket-objects.dto';
 import { BucketObjectInterface } from './bucket-objects.interface';
@@ -179,7 +181,14 @@ export class BucketObjectsService {
     }
   }
 
-  async findAll(bucketName: string) {
+  async findAll(bucketName: string, query: FindAllBucketObjectsDto) {
+    const { page, limit } = query;
+    let skip = 0;
+
+    if (page && limit) {
+      skip = (page - 1) * limit;
+    }
+
     const bucketFound = await this.bucketRepository.findOne({
       where: { name: ILike(bucketName) },
     });
@@ -192,19 +201,90 @@ export class BucketObjectsService {
       );
     }
 
-    const bucketObjects = await this.bucketObjectRepository.find({
-      where: {
-        is_latest_version: true,
-        bucket: {
-          name: ILike(bucketName),
+    const [bucketObjects, count] = await Promise.all([
+      this.bucketObjectRepository.find({
+        where: {
+          is_latest_version: true,
+          bucket: {
+            name: ILike(bucketName),
+          },
         },
-      },
-      select: ['id', 'name', 'is_latest_version', 'metadata', 'mime_type'],
-      order: {
-        created_at: 'DESC',
-      },
-    });
+        select: [
+          'id',
+          'name',
+          'is_latest_version',
+          'metadata',
+          'mime_type',
+          'created_at',
+        ],
+        skip: skip,
+        take: limit || null,
+        order: {
+          created_at: 'DESC',
+        },
+      }),
 
-    return bucketObjects;
+      this.bucketObjectRepository.count({
+        where: {
+          is_latest_version: true,
+          bucket: {
+            name: ILike(bucketName),
+          },
+        },
+      }),
+    ]);
+
+    return { bucket_objects: bucketObjects, count, page, limit };
+  }
+
+  async findAllVersions(
+    bucketName: string,
+    objectName: string,
+    query: FindAllBucketObjectVersionsDto,
+  ) {
+    const { page, limit } = query;
+    let skip = 0;
+
+    if (page && limit) {
+      skip = (page - 1) * limit;
+    }
+
+    const [bucketObjectsFound, count] = await Promise.all([
+      this.bucketObjectRepository.find({
+        where: {
+          name: ILike(objectName),
+          bucket: {
+            name: ILike(bucketName),
+          },
+        },
+        select: [
+          'id',
+          'name',
+          'is_latest_version',
+          'metadata',
+          'mime_type',
+          'created_at',
+        ],
+        relations: ['bucket'],
+        withDeleted: true,
+        skip: skip,
+        take: limit || null,
+        order: {
+          created_at: 'DESC',
+        },
+      }),
+
+      this.bucketObjectRepository.count({
+        where: {
+          name: ILike(objectName),
+          bucket: {
+            name: ILike(bucketName),
+          },
+        },
+        withDeleted: true,
+      }),
+    ]);
+
+    return { bucket_objects: bucketObjectsFound || [], count, page, limit };
   }
 }

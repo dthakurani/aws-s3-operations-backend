@@ -1,5 +1,5 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import { CreateBucketDto } from './buckets.dto';
+import { CreateBucketDto, FindAllBucketDto } from './buckets.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Bucket } from '../../entities/bucket.entity';
 import { ILike, Repository } from 'typeorm';
@@ -11,7 +11,7 @@ export class BucketsService {
     @InjectRepository(Bucket)
     private bucketRepository: Repository<Bucket>,
   ) {}
-  async create(body: CreateBucketDto): Promise<Bucket> {
+  async create(body: CreateBucketDto) {
     const bucketFound = await this.bucketRepository.findOne({
       where: { name: ILike(body.name) },
     });
@@ -45,9 +45,26 @@ export class BucketsService {
     this.bucketRepository.softRemove(bucketFound);
   }
 
-  async findAll(): Promise<Bucket[]> {
-    const buckets = await this.bucketRepository.find();
+  async findAll(query: FindAllBucketDto) {
+    const { page, limit } = query;
+    let skip = 0;
 
-    return buckets;
+    if (page && limit) {
+      skip = (page - 1) * limit;
+    }
+
+    const [buckets, count] = await Promise.all([
+      this.bucketRepository.find({
+        skip,
+        take: limit,
+        order: {
+          created_at: 'DESC',
+        },
+      }),
+
+      this.bucketRepository.count(),
+    ]);
+
+    return { buckets, count, page, limit };
   }
 }
